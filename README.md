@@ -1,5 +1,5 @@
 # Artemis-I  
-## Миссия смоделирована в игре *Kerbal Space Program*  
+## Миссия смоделирована в игре *Kerbal Space Program version (1.12.5)*  
 
 ---
 
