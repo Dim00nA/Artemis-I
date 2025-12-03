@@ -23,12 +23,15 @@
 
 ### Установка
 
-1. **Установить игру** Kerbal Space Program (версия **1.12.5**).
+1. **Установить из Steam игру** Kerbal Space Program (версия **1.12.5**).
 
 2. **Установить мод** `kRPC` для удалённого управления ракетой.
 
-3. **Установить** Python **3.10+**.
+3. **Установить** Python 3.13.7.
 
 4. **Установить необходимые библиотеки**:
    ```bash
-   pip install krpc matplotlib pandas
+   pip install krpc
+   pip install matplotlib
+   pip install pandas
+5.
