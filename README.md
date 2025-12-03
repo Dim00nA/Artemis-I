@@ -8,6 +8,8 @@
 ### Ссылка на документацию по проекту и видео с полётом
 *https://drive.google.com/drive/folders/1USax-sv5C865act7wHh8DX0q2yivLcBZ?usp=sharing*
 
+![202512~3](https://github.com/user-attachments/assets/75398586-7892-4075-a678-ad55949e99e9)
+
 ---
 
 ## Над проектом работали   
