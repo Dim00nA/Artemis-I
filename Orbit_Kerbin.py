@@ -28,12 +28,13 @@ alt = conn.add_stream(getattr, flight, 'mean_altitude')
 apo = conn.add_stream(getattr, orbit, 'apoapsis_altitude')
 peri = conn.add_stream(getattr, orbit, 'periapsis_altitude')
 speed = conn.add_stream(getattr, vessel.flight(vessel.orbit.body.reference_frame), 'speed')
+mass = conn.add_stream(getattr, vessel, 'mass')
+dyn_press = conn.add_stream(getattr, flight, 'dynamic_pressure')
 
 # ПОДГОТОВКА ЛОГА
 with open(CSV_FILE, "w", newline="") as f:
     writer = csv.writer(f)
-    writer.writerow(["time", "altitude", "apoapsis", "periapsis", "speed", "pitch", "throttle"])
-
+    writer.writerow(["time", "altitude", "apoapsis", "periapsis", "speed", "pitch", "throttle", "mass", "dynamic_pressure"])
 start_time = time.time()
 
 def log_data():
@@ -47,7 +48,9 @@ def log_data():
             round(peri(), 2),
             round(speed(), 2),
             vessel.flight().pitch,
-            vessel.control.throttle
+            vessel.control.throttle,
+            round(mass(), 2),
+            round(dyn_press(), 2)
         ])
 
 # СТАРТ
@@ -119,7 +122,7 @@ while peri() < 145000:
     time.sleep(1)
 
 vessel.control.throttle = 0
-print("Орбита успешно округлена")
+print("Орбита успешно округлена!")
 
 # ОТДЕЛЕНИЕ СТУПЕНИ
 time.sleep(2)
@@ -131,7 +134,7 @@ time.sleep(2)
 # ВКЛЮЧЕНИЕ ДВИГАТЕЛЯ
 print("Включение двигателя")
 vessel.control.throttle = 1.0
-burn_time = 2   # СЕКУНДЫ РАБОТЫ ДВИГАТЕЛЯ
+burn_time = 2  
 t0 = time.time()
 while time.time() - t0 < burn_time:
     log_data()
@@ -139,9 +142,9 @@ while time.time() - t0 < burn_time:
 
 # ОТКЛЮЧЕНИЕ ДВИГАТЕЛЯ
 vessel.control.throttle = 0
-print("Орбитальный модуль вышел на стабильную орбиту")
+print("Орбитальный модуль вышел на стабильную орбиту.")
 time.sleep(1)
-print("Миссия завершена")
+print("Миссия завершена.")
 
 # ГРАФИКИ
 df = pd.read_csv(CSV_FILE)
@@ -161,5 +164,7 @@ save_plot("time", "speed", "speed.png", "Время (c)", "Скорость (м/
 save_plot("time", "pitch", "pitch.png", "Время (c)", "Угол (град)", "Угол vs Время")
 save_plot("time", "apoapsis", "apoapsis.png", "Время (c)", "Апоцентр (м)", "Апоцентр vs Время")
 save_plot("time", "periapsis", "periapsis.png", "Время (c)", "Перицентр (м)", "Перицентр vs Время")
+save_plot("time", "mass", "mass.png", "Время (c)", "Масса (кг)", "Масса ракеты vs Время")
+save_plot("time", "dynamic_pressure", "dynamic_pressure.png", "Время (c)", "Давление (Па)", "давление vs Время")
 
 print("Графики сохранены в:", BASE_DIR)
