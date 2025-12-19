@@ -35,7 +35,7 @@ R = 600_000             # Радиус планеты Kerbin (метры)
 # Параметры ракетного двигателя:
 Isp = 295               # Удельный импульс
 g0 = 9.8                # Стандартное ускорение свободного падения
-T = 9.643*10**6             # Тяга двигателя
+T = 9.643*10**6         # Тяга двигателя
 
 # Аэродинамические параметры:
 C_d = 0.25              # Коэффициент лобового сопротивления
@@ -69,6 +69,12 @@ def rho(x, y):
     r = math.sqrt(x**2 + y**2 + 1e-8)
     return rho0 * np.exp((R - r) / H)
 
+# Вычисляем координаты для KSP
+dt_ksp = np.diff(np.append(0, t_ksp))
+v_x_ksp_est = v_ksp * np.cos(pitch_rad)
+theta = np.cumsum((v_x_ksp_est / (h_ksp + 600000)) * dt_ksp)
+x_ksp = (h_ksp + 600000) * np.sin(theta)
+y_ksp = (h_ksp + 600000) * np.cos(theta)
 
 # 5. ОСНОВНАЯ МАТЕМАТИЧЕСКАЯ МОДЕЛЬ
 
@@ -88,15 +94,16 @@ def model(t, state):
     # 2. Производная вертикальной координаты = вертикальная скорость
     dydt = v_y
     # 3. Горизонтальное ускорение
-    dv_xdt = (T * math.cos(Pitch) - F_drag * (v_x / v)) / m
+    dv_xdt = (T * math.cos(Pitch) - F_drag * (v_x / v)) / m - (g * (x/r)) if h <= 58461.13 else - F_drag * (v_x / v) / m - (g * (x/r))
     # 4. Вертикальное ускорение
-    dv_ydt = (T * math.sin(Pitch) - F_drag * (v_y / v)) / m - g
+    dv_ydt = (T * math.sin(Pitch) - F_drag * (v_y / v)) / m - (g * (y/r)) if h <= 58461.13 else - F_drag * (v_y / v) / m - (g * (y/r))
     # 5. Расход массы
-    dmdt = -T / (Isp * g0) if m > 150000 else 0
+    dmdt = -T / (Isp * g0) if not(58461 < h < 150000) else 0
     return [dxdt, dydt, dv_xdt, dv_ydt, dmdt]
 
 
 # 6. ЧИСЛЕННОЕ РЕШЕНИЕ ДИФФЕРЕНЦИАЛЬНЫХ УРАВНЕНИЙ
+
 t_final = min(t_ksp[-1], 300)
 
 # Начальное состояние системы
@@ -123,14 +130,14 @@ m_mod = solution.y[4]      # Масса
 
 # Вычисляем полную скорость (скалярная величина)
 v_mod = np.sqrt(v_x_mod**2 + v_y_mod**2)
+h_mod = np.sqrt(x_mod**2 + y_mod**2) - 600000
 
-h_mod = y_mod - 600000
 
 # ПОДГОТОВКА ДАННЫХ ДЛЯ ГРАФИКОВ
-mask_ksp_100 = t_ksp <= 120
-mask_mod_100 = t_mod <= 120
+mask_ksp_100 = t_ksp <= 300
+mask_mod_100 = t_mod <= 300
 
-max_x_limit = 65000
+max_x_limit = 280000
 
 # Маски для фильтрации по горизонтальной координате:
 mask_x_ksp = x_ksp <= max_x_limit  # Для данных KSP
@@ -139,8 +146,10 @@ mask_x_mod = x_mod <= max_x_limit  # Для данных модели
 # Создаем отфильтрованные массивы для графика траектории:
 x_ksp_filtered = x_ksp[mask_x_ksp]  # KSP данные
 h_ksp_filtered = h_ksp[mask_x_ksp]  # KSP данные по высоте
+y_ksp_filtered = y_ksp[mask_x_ksp]
 x_mod_filtered = x_mod[mask_x_mod]  # Данные модели
 h_mod_filtered = h_mod[mask_x_mod]  # Данные модели по высоте
+y_mod_filtered = y_mod[mask_x_mod]
 
 
 # ПОСТРОЕНИЕ ГРАФИКОВ
@@ -153,7 +162,7 @@ plt.plot(t_mod[mask_mod_100], h_mod[mask_mod_100],
          label="Модель", linewidth=2, linestyle='--', color='red')
 plt.xlabel("Время (с)")
 plt.ylabel("Высота (м)")
-plt.xlim(0, 120)
+plt.xlim(0, 300)
 plt.grid(True, alpha=0.3)
 plt.legend()
 plt.subplot(1, 3, 2)
@@ -163,13 +172,13 @@ plt.plot(t_mod[mask_mod_100], v_mod[mask_mod_100],
          label="Модель", linewidth=2, linestyle='--', color='red')
 plt.xlabel("Время (с)")
 plt.ylabel("Скорость (м/с)")
-plt.xlim(0, 120)
+plt.xlim(0, 300)
 plt.grid(True, alpha=0.3)
 plt.legend()
 plt.subplot(1, 3, 3)
-plt.plot(x_ksp_filtered, h_ksp_filtered,
+plt.plot(x_ksp_filtered, y_ksp_filtered,
          label="KSP", linewidth=2, color='blue')
-plt.plot(x_mod_filtered, h_mod_filtered,
+plt.plot(x_mod_filtered, y_mod_filtered,
          label="Модель", linewidth=2, linestyle='--', color='red')
 plt.xlabel("Горизонтальная координата X (м)")
 plt.ylabel("Высота (м)")
