@@ -59,10 +59,10 @@ def pitch_func(h):
         return np.deg2rad(90)
     elif h <= 45000:
         progress = (h - 250) / (45000 - 250)
-        pitch = 90 - progress * 75  # От 80 до 15 градусов
+        pitch = 90 - progress * 90  # От 80 до 15 градусов
         return np.deg2rad(pitch)
     else:
-        return np.deg2rad(15)
+        return np.deg2rad(0)
 
 def rho(x, y):
     # Функция расчета плотности атмосферы.
@@ -84,6 +84,8 @@ def model(t, state):
     r = math.sqrt(x**2 + y**2 + 1e-8)
     h = r - R
     Pitch = pitch_func(h)
+    Psi = math.atan2(x, y)
+    Phi = Pitch - Psi
     ρ = rho(x, y)
     F_drag = 0.5 * C_d * ρ * S * v**2
     g = mu / r**2
@@ -94,9 +96,9 @@ def model(t, state):
     # 2. Производная вертикальной координаты = вертикальная скорость
     dydt = v_y
     # 3. Горизонтальное ускорение
-    dv_xdt = (T * math.cos(Pitch) - F_drag * (v_x / v)) / m - (g * (x/r)) if h <= 58461.13 else - F_drag * (v_x / v) / m - (g * (x/r))
+    dv_xdt = (T * math.cos(Phi) - F_drag * (v_x / v)) / m - (g * (math.sin(Psi))) if h <= 58461.13 else - F_drag * (v_x / v) / m - (g * (x/r))
     # 4. Вертикальное ускорение
-    dv_ydt = (T * math.sin(Pitch) - F_drag * (v_y / v)) / m - (g * (y/r)) if h <= 58461.13 else - F_drag * (v_y / v) / m - (g * (y/r))
+    dv_ydt = (T * math.sin(Phi) - F_drag * (v_y / v)) / m - (g * (math.cos(Psi))) if h <= 58461.13 else - F_drag * (v_y / v) / m - (g * (y/r))
     # 5. Расход массы
     dmdt = -T / (Isp * g0) if not(58461 < h < 150000) else 0
     return [dxdt, dydt, dv_xdt, dv_ydt, dmdt]
@@ -104,7 +106,7 @@ def model(t, state):
 
 # 6. ЧИСЛЕННОЕ РЕШЕНИЕ ДИФФЕРЕНЦИАЛЬНЫХ УРАВНЕНИЙ
 
-t_final = min(t_ksp[-1], 300)
+t_final = max(t_ksp[-1], 400)
 
 # Начальное состояние системы
 initial_state = [x0, y0, v_x0, v_y0, m0]
@@ -134,10 +136,10 @@ h_mod = np.sqrt(x_mod**2 + y_mod**2) - 600000
 
 
 # ПОДГОТОВКА ДАННЫХ ДЛЯ ГРАФИКОВ
-mask_ksp_100 = t_ksp <= 300
-mask_mod_100 = t_mod <= 300
+mask_ksp_100 = t_ksp <= 400
+mask_mod_100 = t_mod <= 400
 
-max_x_limit = 280000
+max_x_limit = 500_000
 
 # Маски для фильтрации по горизонтальной координате:
 mask_x_ksp = x_ksp <= max_x_limit  # Для данных KSP
@@ -153,7 +155,6 @@ y_mod_filtered = y_mod[mask_x_mod]
 
 
 # ПОСТРОЕНИЕ ГРАФИКОВ
-
 plt.figure(figsize=(15, 4))
 plt.subplot(1, 3, 1)
 plt.plot(t_ksp[mask_ksp_100], h_ksp[mask_ksp_100],
@@ -162,7 +163,7 @@ plt.plot(t_mod[mask_mod_100], h_mod[mask_mod_100],
          label="Модель", linewidth=2, linestyle='--', color='red')
 plt.xlabel("Время (с)")
 plt.ylabel("Высота (м)")
-plt.xlim(0, 300)
+plt.xlim(0, 400)
 plt.grid(True, alpha=0.3)
 plt.legend()
 plt.subplot(1, 3, 2)
@@ -172,7 +173,7 @@ plt.plot(t_mod[mask_mod_100], v_mod[mask_mod_100],
          label="Модель", linewidth=2, linestyle='--', color='red')
 plt.xlabel("Время (с)")
 plt.ylabel("Скорость (м/с)")
-plt.xlim(0, 300)
+plt.xlim(0, 400)
 plt.grid(True, alpha=0.3)
 plt.legend()
 plt.subplot(1, 3, 3)
@@ -181,7 +182,7 @@ plt.plot(x_ksp_filtered, y_ksp_filtered,
 plt.plot(x_mod_filtered, y_mod_filtered,
          label="Модель", linewidth=2, linestyle='--', color='red')
 plt.xlabel("Горизонтальная координата X (м)")
-plt.ylabel("Высота (м)")
+plt.ylabel("Горизонтальная координата Y (м)")
 plt.xlim(0, max_x_limit)
 plt.grid(True, alpha=0.3)
 plt.legend()
@@ -189,4 +190,3 @@ plt.legend()
 plt.tight_layout()
 
 plt.show()
-
