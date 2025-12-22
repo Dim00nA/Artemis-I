@@ -19,7 +19,7 @@ turn_start_alt = 250
 turn_end_alt = 45000
 target_ap = 150000
 roll = 90
-pitch0, pitch1 = 90, 15
+pitch0, pitch1 = 90, 0
 
 # ПОТОКИ ТЕЛЕМЕТРИИ
 flight = vessel.flight()
@@ -75,6 +75,10 @@ while True:
         k = (h - turn_start_alt) / (turn_end_alt - turn_start_alt)
         new_pitch = pitch0 - k * (pitch0 - pitch1)
         ap.target_pitch_and_heading(new_pitch, roll)
+    
+    # Фиксируем угол 0° после завершения поворота
+    elif h >= turn_end_alt:
+        ap.target_pitch_and_heading(0, roll)
 
     # Вышли на нужный апоцентр — уменьшаем тягу
     if apo() >= target_ap:
@@ -82,7 +86,6 @@ while True:
         break
 
     time.sleep(1)
-
 # ОТДЕЛЕНИЕ СТУПЕНИ 
 log_data()
 time.sleep(2)
@@ -124,25 +127,30 @@ while peri() < 145000:
 vessel.control.throttle = 0
 print("Орбита успешно округлена!")
 
-# ОТДЕЛЕНИЕ СТУПЕНИ
-time.sleep(2)
+# # ОТДЕЛЕНИЕ СТУПЕНИ
+# time.sleep(2)
 
-print("Отделяем ступень")
-vessel.control.activate_next_stage()
-time.sleep(2)
+# print("Отделяем ступень")
+# vessel.control.activate_next_stage()
+# time.sleep(2)
 
-# ВКЛЮЧЕНИЕ ДВИГАТЕЛЯ
-print("Включение двигателя")
-vessel.control.throttle = 1.0
-burn_time = 2  
-t0 = time.time()
-while time.time() - t0 < burn_time:
+# # ВКЛЮЧЕНИЕ ДВИГАТЕЛЯ
+# print("Включение двигателя")
+# vessel.control.throttle = 1.0
+# burn_time = 2  
+# t0 = time.time()
+# while time.time() - t0 < burn_time:
+#     log_data()
+#     time.sleep(1)
+
+# # ОТКЛЮЧЕНИЕ ДВИГАТЕЛЯ
+# vessel.control.throttle = 0
+# print("Орбитальный модуль вышел на стабильную орбиту.")
+
+for i in range(50):
     log_data()
     time.sleep(1)
 
-# ОТКЛЮЧЕНИЕ ДВИГАТЕЛЯ
-vessel.control.throttle = 0
-print("Орбитальный модуль вышел на стабильную орбиту.")
 time.sleep(1)
 print("Миссия завершена.")
 
