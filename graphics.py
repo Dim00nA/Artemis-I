@@ -59,7 +59,7 @@ def pitch_func(h):
         return np.deg2rad(90)
     elif h <= 45000:
         progress = (h - 250) / (45000 - 250)
-        pitch = 90 - progress * 90  # От 80 до 15 градусов
+        pitch = 90 - progress * 90
         return np.deg2rad(pitch)
     else:
         return np.deg2rad(0)
